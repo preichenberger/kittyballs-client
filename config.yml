@@ -1,0 +1,12 @@
+defaults: &defaults
+  name: 'kittyballs'
+development:
+  <<: *defaults
+  port: 5001
+  
+test:
+  <<: *defaults
+
+production:
+  <<: *defaults
+  port: {{ env.PORT }}
