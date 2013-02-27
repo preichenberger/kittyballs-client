@@ -1,9 +1,6 @@
 config = require('singleconfig')
 express = require('express')
-OpenTok = require('opentok')
-redis = require('redis')
 roundRobot = require('node-sphero')
-url = require('url')
 
 app = express()
 server = require('http').createServer(app)
@@ -17,18 +14,6 @@ sphero.on('connected', (ball) ->
 )
 sphero.connect()
 
-# Redis
-redisURL = url.parse(config.redis.url)
-redisAuth = redisURL.auth.split(':')
-GLOBAL.redisClient = redis.createClient(
-  redisURL.port,
-  redisURL.hostname
-)
-GLOBAL.redisClient.auth(redisAuth[1])
-
-# OpenTok
-GLOBAL.opentokClient = new OpenTok.OpenTokSDK(config.apikey, config.apisecret)
-
 # Views
 app.set('view engine', 'jade')
 app.set('views', "#{__dirname}/view")
@@ -38,7 +23,6 @@ app.use(express.cookieParser())
 app.use(express.bodyParser())
 app.use(express.logger('short'))
 app.use(express.errorHandler())
-
 
 # Local variables
 app.locals.config = config
@@ -58,7 +42,6 @@ color = () ->
   b = Math.random() * 255
   return [r,g,b]
 
-
 io.sockets.on('connection', (socket) ->
   console.log('socket io up')
   socket.emit('connected', { connected: true })
@@ -66,7 +49,6 @@ io.sockets.on('connection', (socket) ->
     if !GLOBAL.sphero
       sphero.connect()
 
-    console.log(data)
     switch data.action
       when 'roll'
         if GLOBAL.sphero

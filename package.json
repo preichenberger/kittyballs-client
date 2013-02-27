@@ -13,11 +13,7 @@
     "coffee-script": "*",
     "express": "*",
     "jade": "*",
-    "keypress": "*",
     "node-sphero": "*",
-    "node-thunder-driver": "*",
-    "opentok": "*",
-    "redis": "*",
     "singleconfig": "*",
     "socket.io": "*"
   },

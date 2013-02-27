@@ -1,5 +1,4 @@
 defaults: &defaults
-  name: 'kittyballs'
 development:
   <<: *defaults
   port: 5001
