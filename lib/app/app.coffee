@@ -8,11 +8,32 @@ io = require('socket.io').listen(server)
 
 # Sphero
 sphero = new roundRobot.Sphero()
+spheroLock = false
+
 sphero.on('connected', (ball) ->
   GLOBAL.sphero = ball
+  spheroLock = false
   console.log('Connected to sphero')
 )
-sphero.connect()
+
+spheroConnect = () ->
+  if spheroLock
+    console.log('Sphero Locked')
+    return
+
+  console.log('Connecting to sphero')
+
+  GLOBAL.sphero = null
+  spheroLock = true
+  sphero.connect()
+  spheroTimeoutId = setTimeout(
+    () ->
+      console.log('Sphero connection timed out')
+      spheroLock = false
+    , 5000
+  )
+
+spheroConnect()
 
 # Views
 app.set('view engine', 'jade')
@@ -47,12 +68,18 @@ io.sockets.on('connection', (socket) ->
   socket.emit('connected', { connected: true })
   socket.on('message', (data) ->
     if !GLOBAL.sphero
-      sphero.connect()
+      spheroConnect()
+    else
+      GLOBAL.sphero.ping((err) ->
+        if err
+          spheroConnect()
+      )
 
     switch data.action
       when 'roll'
+        console.log('roll')
         if GLOBAL.sphero
-          GLOBAL.sphero.roll(0, .5)
+          GLOBAL.sphero.roll(0, .2)
       when 'back'
         console.log('back')
         if GLOBAL.sphero
@@ -69,7 +96,5 @@ io.sockets.on('connection', (socket) ->
         rgb = color()
         if GLOBAL.sphero
           GLOBAL.sphero.setRGBLED(rgb[0], rgb[1], rgb[2], false)
-      else
-        console.log('bad key')
   )
 )
