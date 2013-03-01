@@ -29,8 +29,8 @@ spheroConnect = () ->
     sphero.close()
   catch e
     console.log('iff')
-
-  GLOBAL.sphero = null
+  delete GLOBAL.sphero
+  spher = new roundRobot.Sphero()
   spheroLock = true
   sphero.connect()
   spheroTimeoutId = setTimeout(
@@ -60,6 +60,7 @@ socket.on('connect', () ->
   socket.on('message', (data) ->
     if !GLOBAL.sphero
       spheroConnect()
+      return
     else
       console.log('trying to ping')
       GLOBAL.sphero.ping((err) ->
@@ -71,7 +72,7 @@ socket.on('connect', () ->
       when 'roll'
         console.log('roll')
         if GLOBAL.sphero
-          GLOBAL.sphero.roll(0, .2)
+          GLOBAL.sphero.roll(0, .5)
       when 'back'
         console.log('back')
         if GLOBAL.sphero
