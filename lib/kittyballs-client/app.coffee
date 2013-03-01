@@ -35,6 +35,9 @@ spheroConnect = () ->
   sphero.connect()
   spheroTimeoutId = setTimeout(
     () ->
+      if GLOBAL.sphero
+        return
+
       console.log('Sphero connection timed out')
       spheroLock = false
     , 5000

@@ -1,6 +1,6 @@
 defaults: &defaults
   socketio:
-    server: 'http://kittyballs.org'
+    server: 'http://www.kittyballs.org'
   publishertoken: {{ env.PUBLISHERTOKEN }}
 development:
   <<: *defaults
