@@ -1,10 +1,7 @@
 config = require('singleconfig')
-express = require('express')
+io = require('socket.io-client')
 roundRobot = require('node-sphero')
-
-app = express()
-server = require('http').createServer(app)
-io = require('socket.io').listen(server)
+socket = io.connect(config.socketio.server)
 
 # Sphero
 sphero = new roundRobot.Sphero()
@@ -16,12 +13,22 @@ sphero.on('connected', (ball) ->
   console.log('Connected to sphero')
 )
 
+sphero.on('error', (err) ->
+  console.log('error')
+
+)
+
 spheroConnect = () ->
   if spheroLock
     console.log('Sphero Locked')
     return
 
   console.log('Connecting to sphero')
+
+  try
+    sphero.close()
+  catch e
+    console.log('iff')
 
   GLOBAL.sphero = null
   spheroLock = true
@@ -35,27 +42,6 @@ spheroConnect = () ->
 
 spheroConnect()
 
-# Views
-app.set('view engine', 'jade')
-app.set('views', "#{__dirname}/view")
-
-# Middleware
-app.use(express.cookieParser())
-app.use(express.bodyParser())
-app.use(express.logger('short'))
-app.use(express.errorHandler())
-
-# Local variables
-app.locals.config = config
-app.locals.pretty = true
-app.locals.io = io
-
-# Routes
-require('./route')(app)
-
-server.listen(config.port)
-console.log("Started app on port: #{config.port}")
-
 # Socket io
 color = () ->
   r = Math.random() * 255
@@ -63,13 +49,19 @@ color = () ->
   b = Math.random() * 255
   return [r,g,b]
 
-io.sockets.on('connection', (socket) ->
+socket.on('connect', () ->
   console.log('socket io up')
-  socket.emit('connected', { connected: true })
+  socket.emit('message',
+    action: 'join'
+    publisherToken: config.publishertoken
+    role: 'publisher'
+  )
+
   socket.on('message', (data) ->
     if !GLOBAL.sphero
       spheroConnect()
     else
+      console.log('trying to ping')
       GLOBAL.sphero.ping((err) ->
         if err
           spheroConnect()

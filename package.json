@@ -1,5 +1,5 @@
 {
-  "name": "kittyballs-server",
+  "name": "kittyballs-client",
   "description": "",
   "author": "",
   "version": "0.0.1",
@@ -9,13 +9,10 @@
     "npm": "1.2.x"
   },
   "dependencies": {
-    "async": "*",
     "coffee-script": "*",
-    "express": "*",
-    "jade": "*",
-    "node-sphero": "*",
+    "node-sphero": "git://github.com/preichenberger/node-sphero.git#master",
     "singleconfig": "*",
-    "socket.io": "*"
+    "socket.io-client": "*"
   },
   "devDependencies": {
    "node-dev": "*"

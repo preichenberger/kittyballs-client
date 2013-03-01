@@ -1,1 +1,12 @@
 runtime: node08
+
+run: |
+  source .env
+  COFFEE_BIN=coffee
+
+  if [ -z "$NODE_ENV" ] || [ "$NODE_ENV" == 'development' ]
+  then
+    COFFEE_BIN=./node_modules/.bin/node-dev 
+  fi
+
+  $COFFEE_BIN lib/kittyballs-client/app.coffee

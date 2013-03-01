@@ -1,11 +1,14 @@
 defaults: &defaults
+  socketio:
+    server: 'http://kittyballs.org'
+  publishertoken: 'T1==cGFydG5lcl9pZD0yMzAxNzU1MiZzaWc9YWU2Y2UyN2QxYWZlZTdjOGQ3ZWI1M2UzOTk3YjAzM2E1MWRiMzlhNDpzZXNzaW9uX2lkPTJfTVg0eU16QXhOelUxTW41LVJuSnBJRTFoY2lBd01TQXdNRG95TURveU1pQlFVMVFnTWpBeE0zNHdMakUyTmpNd01UWXhmZyZjcmVhdGVfdGltZT0xMzYyMTI2MDIyJm5vbmNlPTE3MjYyNCZyb2xlPXB1Ymxpc2hlciZjb25uZWN0aW9uX2RhdGE9dXNlcklkJTNBNTEzMDY0YzY0OTExMjZjZjBlMDAwMDAx'
 development:
   <<: *defaults
-  port: 5001
+  socketio:
+    server: {{ env.SOCKETIO_SERVER }}
   
 test:
   <<: *defaults
 
 production:
   <<: *defaults
-  port: {{ env.PORT }}
