@@ -50,11 +50,14 @@ color = () ->
   return [r,g,b]
 
 # Socketio server
-socket = io.connect(config.socketio.server)
+socketPingIds = {}
+socket = io.connect(config.socketio.server,
+  reconnect: false
+)
 socket.on('connect', () ->
   console.log('socketio started')
 
-  pingId = setInterval(
+  socketPingIds[socket.id] = setInterval(
     () ->
       socket.emit('message',
         action: 'ping',
@@ -69,31 +72,33 @@ socket.on('connect', () ->
     role: 'publisher'
   )
 
-  spheroEmitter.on('connected', (ball) ->
-    socket.on('message', (data) ->
-      if spheroLock
-        return
+  socket.on('message', (data) ->
+    if sphero.balls.length == 0 || spheroLock
+      return
 
-      switch data.action
-        when 'roll'
-          console.log('roll')
-          ball.roll(0, .5)
-        when 'back'
-          console.log('back')
-          ball.roll(0, 0)
-        when 'left'
-          console.log('left')
-          ball.setHeading(315)
-        when 'right'
-          console.log('right')
-          ball.setHeading(45)
-        when 'color'
-          rgb = color()
-          ball.setRGBLED(rgb[0], rgb[1], rgb[2], false)
-    )
+    ball = sphero.balls[0]
+
+    switch data.action
+      when 'roll'
+        console.log('roll')
+        ball.roll(0, .5)
+      when 'back'
+        console.log('back')
+        ball.roll(0, 0)
+      when 'left'
+        console.log('left')
+        ball.setHeading(315)
+      when 'right'
+        console.log('right')
+        ball.setHeading(45)
+      when 'color'
+        rgb = color()
+        ball.setRGBLED(rgb[0], rgb[1], rgb[2], false)
   )
   socket.on('disconnect', () ->
-    clearInterval(pingId)
+    clearInterval(socketPingIds[socket.id])
+    socket.removeAllListeners('message')
+    socket.socket.reconnect()
   )
 )
 
