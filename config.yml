@@ -1,11 +1,14 @@
 defaults: &defaults
+  broadcastkey: {{ env.BROADCASTKEY }}
   socketio:
     server: 'http://www.kittyballs.org'
-  publishertoken: {{ env.PUBLISHERTOKEN }}
+  sphero:
+    retries: 3
 development:
   <<: *defaults
   socketio:
     server: {{ env.SOCKETIO_SERVER }}
+    pinginterval: 5000
   
 test:
   <<: *defaults

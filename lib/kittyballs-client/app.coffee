@@ -1,96 +1,111 @@
 config = require('singleconfig')
+events = require('events')
 io = require('socket.io-client')
 roundRobot = require('node-sphero')
-socket = io.connect(config.socketio.server)
 
 # Sphero
 sphero = new roundRobot.Sphero()
 spheroLock = false
-
+spheroEmitter = new events.EventEmitter()
+spheroPingId = null
 sphero.on('connected', (ball) ->
-  GLOBAL.sphero = ball
   spheroLock = false
+  spheroEmitter.emit('connected', ball)
   console.log('Connected to sphero')
 )
 
-sphero.on('error', (err) ->
-  console.log('error')
-
-)
-
-spheroConnect = () ->
+# Sphero connect
+spheroEmitter.on('disconnected', () ->
   if spheroLock
-    console.log('Sphero Locked')
     return
 
-  console.log('Connecting to sphero')
+  if sphero.balls.length > 0
+    sphero = new roundRobot.Sphero()
 
-  try
-    sphero.close()
-  catch e
-    console.log('iff')
-  delete GLOBAL.sphero
-  spher = new roundRobot.Sphero()
   spheroLock = true
+  console.log('Connecting to sphero...')
   sphero.connect()
-  spheroTimeoutId = setTimeout(
-    () ->
-      if GLOBAL.sphero
-        return
+  spheroLock = false
+)
 
-      console.log('Sphero connection timed out')
-      spheroLock = false
-    , 5000
-  )
+# Sphero ping
+spheroPingId = setInterval(
+  () ->
+    if sphero.balls.length > 0
+      ball = sphero.balls[0]
+      ball.ping((err) ->
+        if err && !spheroLock
+          spheroEmitter.emit('disconnected')
+      )
+    else
+      spheroEmitter.emit('disconnected')
+  , 5000
+)
 
-spheroConnect()
-
-# Socket io
+# Color randomizer
 color = () ->
   r = Math.random() * 255
   g = Math.random() * 255
   b = Math.random() * 255
   return [r,g,b]
 
+# Socketio server
+socket = io.connect(config.socketio.server)
 socket.on('connect', () ->
-  console.log('socket io up')
+  console.log('socketio started')
+
+  pingId = setInterval(
+    () ->
+      socket.emit('message',
+        action: 'ping',
+        broadcastKey: config.broadcastkey
+      )
+    config.socketio.pinginterval
+  )
+
   socket.emit('message',
     action: 'join'
-    publisherToken: config.publishertoken
+    broadcastKey: config.broadcastkey
     role: 'publisher'
   )
 
-  socket.on('message', (data) ->
-    if !GLOBAL.sphero
-      spheroConnect()
-      return
-    else
-      console.log('trying to ping')
-      GLOBAL.sphero.ping((err) ->
-        if err
-          spheroConnect()
-      )
+  spheroEmitter.on('connected', (ball) ->
+    socket.on('message', (data) ->
+      if spheroLock
+        return
 
-    switch data.action
-      when 'roll'
-        console.log('roll')
-        if GLOBAL.sphero
-          GLOBAL.sphero.roll(0, .5)
-      when 'back'
-        console.log('back')
-        if GLOBAL.sphero
-          GLOBAL.sphero.roll(0, 0)
-      when 'left'
-        console.log('left')
-        if GLOBAL.sphero
-          sphero.setHeading(315)
-      when 'right'
-        console.log('right')
-        if GLOBAL.sphero
-          sphero.setHeading(45)
-      when 'color'
-        rgb = color()
-        if GLOBAL.sphero
-          GLOBAL.sphero.setRGBLED(rgb[0], rgb[1], rgb[2], false)
+      switch data.action
+        when 'roll'
+          console.log('roll')
+          ball.roll(0, .5)
+        when 'back'
+          console.log('back')
+          ball.roll(0, 0)
+        when 'left'
+          console.log('left')
+          ball.setHeading(315)
+        when 'right'
+          console.log('right')
+          ball.setHeading(45)
+        when 'color'
+          rgb = color()
+          ball.setRGBLED(rgb[0], rgb[1], rgb[2], false)
+    )
   )
+  socket.on('disconnect', () ->
+    clearInterval(pingId)
+  )
+)
+
+process.on('SIGINT', () ->
+  console.log('exiting')
+  if sphero.balls.length > 0
+    try
+      sphero.close()
+    catch err
+
+  spheroEmitter.removeAllListeners()
+  socket.disconnect()
+  clearInterval(spheroPingId)
+  process.exit()
 )
